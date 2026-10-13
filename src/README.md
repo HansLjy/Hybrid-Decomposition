@@ -118,24 +118,46 @@ An exact result is refused if no full-degree relation is stable at both LLL
 scales, if the squarefree degree does not equal the number of distinct witness
 points, or if any coordinate relation fails.
 
-## Tests and supplied examples
+## Direct witness-set test and supplied examples
 
-`ExampleSystems.m2` contains exact `QQ` versions of all nine polynomial
-systems from `assets/examples`, plus the small
-`toy-three-points-and-circle` system. The toy variety is the union of the
-circle `toyX^2+toyY^2=1` and the isolated points `(0,3)`, `(1,3)`, and
-`(2,3)`. Each system is exported individually and through `exampleSystems`,
-indexed by the names in `exampleSystemNames`.
+`NodalCubicToy.m2` defines the reducible toy variety consisting of the nodal
+cubic
 
-The tests at the end of the main script are wrapped in
-`testHybridDecompositionOnExamples`. Its current focused test runs the toy
-system, prints its result, checks dimensions `0` and `1`, checks total degrees
-`3` and `2`, and verifies reconstruction of all three isolated points. The
-returned table is stored in `exampleTestResults`.
+```text
+y^2 = x^2(x+1)
+```
+
+together with the isolated points `(0,2)`, `(1,2)`, and `(2,2)`.  Its rational
+slice `5y-18x+24=0` has the known witness points
+
+```text
+(3,6), (8,24), (24/25,-168/125).
+```
+
+The file constructs the `WitnessSet` directly from these points at 300-bit
+precision.  It also defines the closed-form Chow polynomial
+
+```text
+R(U0,U1,U2) = product_(x,y) (U0-x U1-y U2)
+```
+
+over the three witness points.
+
+The test at the end of `HybridDecomposition.m2` passes this witness set
+straight to `componentRepresentation`; it does not call `regeneration`,
+`decompose`, or `hybridDecomposition`.  Besides checking the fixture, it
+checks that the reconstructed `f` agrees, up to normalization, with the
+specialization `R(T,t_1,t_2)` for the selected separating form.  Run it from
+`src` with
 
 ```sh
-M2 --script HybridDecomposition.m2
+M2 -q --stop -e 'load "HybridDecomposition.m2"; testNodalCubicToyWitnessSet();'
 ```
+
+`ExampleSystems.m2` remains available separately and contains exact `QQ`
+versions of all nine polynomial systems from `assets/examples`, plus the
+older circle-and-points fixture.  Each system is exported individually and
+through `exampleSystems`, indexed by the names in `exampleSystemNames`.
 
 Each exported entry contains `"Ring"`, `"Polynomials"`, `"Name"`, and the
 original finite-field `"SourceCharacteristic"`. For example:
@@ -146,5 +168,5 @@ E = getExampleSystem "pseudosing_deg_2_nvars_6";
 I = ideal(E#"Polynomials");
 ```
 
-Several of the larger systems have high path counts, so running the complete
-test block can take a long time.
+Several of the larger systems have high path counts, so decomposing them can
+take a long time; the direct nodal-cubic test avoids that work.

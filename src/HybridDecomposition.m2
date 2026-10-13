@@ -1,6 +1,7 @@
 needsPackage "NumericalAlgebraicGeometry";
 needsPackage "LLLBases";
 load "ExampleSystems.m2";
+load "NodalCubicToy.m2";
 
 -----------------------------------------------------------------------------
 -- Approximate integer kernels
@@ -366,61 +367,64 @@ hybridDecomposition Ideal := o -> I -> (
         }
     );
 
+-- Direct witness-set test on the rational nodal-cubic toy
 -----------------------------------------------------------------------------
--- Tests on the systems imported from ExampleSystems.m2
------------------------------------------------------------------------------
 
-testHybridDecompositionOnExamples = () -> (
-    expectedPolynomialCounts := new HashTable from {
-        "toy-three-points-and-circle" => 2,
-        "Leykin-1" => 6,
-        "Sys2449" => 21,
-        "Sys2873" => 35,
-        "Sys2881" => 55,
-        "Sys3011" => 11,
-        "mohab1" => 4,
-        "pseudosing_deg_2_nvars_6" => 6,
-        "singhypcritpoints_deg_2_nvars_8" => 8,
-        "soscritpoints_deg_2_nvars_6_s_4" => 6
-        };
+testNodalCubicToyWitnessSet = () -> (
+    curveEquation := NodalCubicToyCurveIdeal_0;
+    nodeSubstitution := {nodalX=>0_QQ,nodalY=>0_QQ};
+    assert(sub(curveEquation,nodeSubstitution) == 0);
+    assert(sub(diff(nodalX,curveEquation),nodeSubstitution) == 0);
+    assert(sub(diff(nodalY,curveEquation),nodeSubstitution) == 0);
+    assert(all(NodalCubicToyIsolatedCoordinates, p ->
+        sub(curveEquation,{nodalX=>p#0,nodalY=>p#1}) != 0));
+    assert(all(NodalCubicToyIsolatedCoordinates, p ->
+        all(NodalCubicToyIdeal_*, f ->
+            sub(f,{nodalX=>p#0,nodalY=>p#1}) == 0)));
+    assert(all(NodalCubicToyIsolatedCoordinates, p ->
+        sub(NodalCubicToySliceIdeal_0,
+            {nodalX=>p#0,nodalY=>p#1}) != 0));
+    assert(dim NodalCubicToySliceIntersectionIdeal == 0);
+    assert(degree NodalCubicToySliceIntersectionIdeal == 3);
 
-    truncatedExampleSystemNames := {"toy-three-points-and-circle"};
+    assert(dim NodalCubicToyWitnessSet == 1);
+    assert(degree NodalCubicToyWitnessSet == 3);
+    assert(all(NodalCubicToyWitnessCoordinates, p ->
+        sub(curveEquation,{nodalX=>p#0,nodalY=>p#1}) == 0));
+    assert(all(NodalCubicToyWitnessCoordinates, p ->
+        all(NodalCubicToyIdeal_*, f ->
+            sub(f,{nodalX=>p#0,nodalY=>p#1}) == 0)));
+    assert(all(NodalCubicToyWitnessCoordinates, p ->
+        sub(NodalCubicToySliceIdeal_0,{nodalX=>p#0,nodalY=>p#1}) == 0));
 
-    results := new MutableHashTable;
-    scan(truncatedExampleSystemNames, exampleName -> (
-        example := exampleSystems#exampleName;
-        exampleRing := example#"Ring";
-        examplePolynomials := example#"Polynomials";
-        assert(#examplePolynomials == expectedPolynomialCounts#exampleName);
-        assert(all(examplePolynomials, f -> ring f === exampleRing));
-        ));
+    expectedR := product(NodalCubicToyWitnessCoordinates, p ->
+        nodalU0-p#0*nodalU1-p#1*nodalU2);
+    assert(NodalCubicToyR == expectedR);
+
     setRandomSeed 0;
-    scan(truncatedExampleSystemNames, exampleName -> (
-        example := exampleSystems#exampleName;
-        print("testing " | exampleName);
-        result := try hybridDecomposition(ideal(example#"Polynomials"),
-            PrintResults => true) else null;
-        results#exampleName = result;
-        print("result for " | exampleName | ":");
-        print result;
-        if exampleName == "toy-three-points-and-circle" and result =!= null then (
-            assert(result#"Dimensions" == {0,1});
-            assert(sum((result#"ByDimension")#0 / (component -> component#"Degree")) == 3);
-            assert(sum((result#"ByDimension")#1 / (component -> component#"Degree")) == 2);
-            assert(all((result#"ByDimension")#0,
-                component -> component#"Reconstructed"));
-            );
-        ));
-    assert(all(truncatedExampleSystemNames, exampleName ->
-        results#?exampleName and results#exampleName =!= null));
-    print "all example-system tests completed";
-    results
+    print "testing the known nodal-cubic witness set";
+    result := componentRepresentation(
+        NodalCubicToyWitnessSet,
+        NodalCubicToyRing,
+        RefineWitnessPoints => false,
+        PrintResults => true);
+    assert(result#"Reconstructed");
+    assert(result#"Dimension" == 1);
+    assert(result#"Degree" == 3);
+    assert(result#"WitnessSet" === NodalCubicToyWitnessSet);
+    assert(#(result#"ClusteredSliceSolutions") == 3);
+
+    expectedF := nodalCubicToySpecializeR(
+        result#"LinearFormCoefficients");
+    expectedRing := ring expectedF;
+    reconstructedF := (map(
+        expectedRing,
+        ring result#"f",
+        {(gens expectedRing)#0}))(result#"f");
+    assert(reconstructedF / leadCoefficient reconstructedF ==
+        expectedF / leadCoefficient expectedF);
+    print "nodal-cubic direct witness-set test completed";
+    result
     );
 
-
 end;
-
-clearAll;
-load("HybridDecomposition.m2");
-exampleTestResults = testHybridDecompositionOnExamples()
-print exampleTestResults;
