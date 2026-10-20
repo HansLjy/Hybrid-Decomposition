@@ -1,7 +1,7 @@
 needsPackage "NumericalAlgebraicGeometry";
 needsPackage "LLLBases";
 load "ExampleSystems.m2";
-load "NodalCubicToy.m2";
+load "ToyExamples.m2";
 
 -----------------------------------------------------------------------------
 -- Approximate integer kernels
@@ -298,6 +298,7 @@ componentRepresentation (WitnessSet,PolynomialRing) := o -> (W,inputRing) -> (
     success := all(coordinateData, h -> h#"Reconstructed");
     if o.PrintResults then (
         print("dimension " | toString(dim refinedW) | ", degree " | toString(degree refinedW));
+        print("linear form = " | toString exactLinearForm);
         print("f = " | toString f);
         if success then scan(#coordinateData, i -> print(
             "g_" | toString(i+1) | " = (" |
@@ -367,64 +368,260 @@ hybridDecomposition Ideal := o -> I -> (
         }
     );
 
--- Direct witness-set test on the rational nodal-cubic toy
+-- Direct witness-set tests on the explicitly solved toy examples
 -----------------------------------------------------------------------------
 
-testNodalCubicToyWitnessSet = () -> (
-    curveEquation := NodalCubicToyCurveIdeal_0;
-    nodeSubstitution := {nodalX=>0_QQ,nodalY=>0_QQ};
-    assert(sub(curveEquation,nodeSubstitution) == 0);
-    assert(sub(diff(nodalX,curveEquation),nodeSubstitution) == 0);
-    assert(sub(diff(nodalY,curveEquation),nodeSubstitution) == 0);
-    assert(all(NodalCubicToyIsolatedCoordinates, p ->
-        sub(curveEquation,{nodalX=>p#0,nodalY=>p#1}) != 0));
-    assert(all(NodalCubicToyIsolatedCoordinates, p ->
-        all(NodalCubicToyIdeal_*, f ->
-            sub(f,{nodalX=>p#0,nodalY=>p#1}) == 0)));
-    assert(all(NodalCubicToyIsolatedCoordinates, p ->
-        sub(NodalCubicToySliceIdeal_0,
-            {nodalX=>p#0,nodalY=>p#1}) != 0));
-    assert(dim NodalCubicToySliceIntersectionIdeal == 0);
-    assert(degree NodalCubicToySliceIntersectionIdeal == 3);
+toyPolynomialResidual = (f,p) -> (
+    R := ring f;
+    z := coordinates p;
+    abs sub(f,apply(numgens R, i -> (gens R)#i => z#i))
+    );
 
-    assert(dim NodalCubicToyWitnessSet == 1);
-    assert(degree NodalCubicToyWitnessSet == 3);
-    assert(all(NodalCubicToyWitnessCoordinates, p ->
-        sub(curveEquation,{nodalX=>p#0,nodalY=>p#1}) == 0));
-    assert(all(NodalCubicToyWitnessCoordinates, p ->
-        all(NodalCubicToyIdeal_*, f ->
-            sub(f,{nodalX=>p#0,nodalY=>p#1}) == 0)));
-    assert(all(NodalCubicToyWitnessCoordinates, p ->
-        sub(NodalCubicToySliceIdeal_0,{nodalX=>p#0,nodalY=>p#1}) == 0));
+evaluateUnivariateAt = (f,beta) -> (
+    coefficients := polynomialCoefficients f;
+    sum(#coefficients, i -> coefficients#i*beta^i)
+    );
 
-    expectedR := product(NodalCubicToyWitnessCoordinates, p ->
-        nodalU0-p#0*nodalU1-p#1*nodalU2);
-    assert(NodalCubicToyR == expectedR);
+solveRUR = result -> (
+    if not result#"Reconstructed" then
+        error "cannot solve an RUR that was not reconstructed";
+    f := result#"f";
+    fRed := result#"SquareFreePart";
+    coordinateData := result#"CoordinateRepresentations";
+    projectedRoots := roots(f,Precision => 300);
+    apply(projectedRoots, beta -> (
+        derivativeValue := evaluateDerivativeAt(fRed,beta);
+        if abs derivativeValue < 10^(-70) then
+            error "encountered a multiple root of the squarefree part";
+        point {apply(coordinateData, coordinateRecord ->
+            evaluateUnivariateAt(coordinateRecord#"Numerator",beta) /
+                (coordinateRecord#"Denominator"*derivativeValue))}
+        ))
+    );
 
-    setRandomSeed 0;
-    print "testing the known nodal-cubic witness set";
+samePointSets = (leftPoints,rightPoints,tolerance) -> (
+    #leftPoints == #rightPoints
+    and all(leftPoints, p -> #select(rightPoints, q ->
+        areEqual(p,q,Tolerance => tolerance)) == 1)
+    and all(rightPoints, q -> #select(leftPoints, p ->
+        areEqual(p,q,Tolerance => tolerance)) == 1)
+    );
+
+printToySolutions = (exactDescriptions,numericalPoints) -> (
+    oldPrintingPrecision := printingPrecision;
+    printingPrecision = 20;
+    print("exact solutions = " | toString exactDescriptions);
+    print("numerical RUR solutions = " |
+        toString apply(numericalPoints, coordinates));
+    printingPrecision = oldPrintingPrecision;
+    );
+
+testToyExample = name -> (
+    example := toyExamples#name;
+    n := example#"n";
+    d := example#"d";
+    R := example#"Ring";
+    I := example#"Ideal";
+    H := example#"Hyperplanes";
+    knownSolutions := example#"KnownSolutions";
+
+    print("testing toy example " | name |
+        " with (n,d) = (" | toString n | "," | toString d | ")");
+    assert(coefficientRing R === QQ);
+    assert(numgens R == n);
+    assert(dim I == d);
+    assert(numgens H == d);
+    assert(all(H_*, h -> first degree h == 1));
+    assert(dim(I+H) == 0);
+    assert(degree(I+H) == #knownSolutions);
+    assert(all(knownSolutions, p ->
+        all(I_* | H_*, f -> toyPolynomialResidual(f,p) < 10^(-70))));
+
     result := componentRepresentation(
-        NodalCubicToyWitnessSet,
-        NodalCubicToyRing,
+        example#"WitnessSet",
+        R,
         RefineWitnessPoints => false,
         PrintResults => true);
     assert(result#"Reconstructed");
-    assert(result#"Dimension" == 1);
-    assert(result#"Degree" == 3);
-    assert(result#"WitnessSet" === NodalCubicToyWitnessSet);
-    assert(#(result#"ClusteredSliceSolutions") == 3);
-
-    expectedF := nodalCubicToySpecializeR(
-        result#"LinearFormCoefficients");
-    expectedRing := ring expectedF;
-    reconstructedF := (map(
-        expectedRing,
-        ring result#"f",
-        {(gens expectedRing)#0}))(result#"f");
-    assert(reconstructedF / leadCoefficient reconstructedF ==
-        expectedF / leadCoefficient expectedF);
-    print "nodal-cubic direct witness-set test completed";
+    assert(result#"Dimension" == d);
+    assert(result#"Degree" == #knownSolutions);
+    assert(#(result#"WitnessPoints") == #knownSolutions);
+    rurSolutions := solveRUR result;
+    printToySolutions(example#"KnownSolutionDescriptions",rurSolutions);
+    assert(samePointSets(rurSolutions,knownSolutions,10^(-20)));
+    print("toy example " | name | " completed");
     result
     );
+
+testToyExamples = () -> (
+    setRandomSeed 0;
+    apply(toyExampleNames, testToyExample)
+    );
+
+-- Keep the old focused entry point for callers that only want the nodal cubic.
+testNodalCubicToyWitnessSet = () -> (
+    setRandomSeed 0;
+    testToyExample "nodal-cubic-rational-slice"
+    );
+
+-----------------------------------------------------------------------------
+-- Equidimensional-component test from ExampleSystems.m2
+-----------------------------------------------------------------------------
+
+randomRationalHyperplanes = (R,d,seed,coefficientBound) -> (
+    setRandomSeed seed;
+    variables := gens R;
+    ideal apply(d, j ->
+        sum(numgens R, i ->
+            random(-coefficientBound,coefficientBound)*variables#i)
+        + random(-coefficientBound,coefficientBound))
+    );
+
+squareComponentIdeal = J -> (
+    K := ideal take(J_*,codim J);
+    if not isSubset(J,K) or not isSubset(K,J) then
+        error "the selected square component equations do not define the component";
+    K
+    );
+
+solveAndRefineSquareSlice = (K,H) -> (
+    F := K_* | H_*;
+    rawSolutions := solveSystem(F,Software => M2engine,Precision => 300);
+    system := polySystem F;
+    apply(rawSolutions, p -> refine(system,p,
+        Software => M2engine,
+        Bits => 300,
+        ErrorTolerance => 10^(-70),
+        ResidualTolerance => 10^(-70),
+        Iterations => 60))
+    );
+
+complexWitnessSetForDecomposition = (I,H,slicePoints) -> (
+    R := ring I;
+    C := CC_100(monoid[
+        Variables => numgens R,
+        VariableBaseName => "decompositionVariable"]);
+    phi := map(C,R,gens C);
+    complexI := ideal apply(I_*, f -> phi f);
+    complexH := ideal apply(H_*, f -> phi f);
+    witnessSet(complexI,complexH,slicePoints)
+    );
+
+printNumericalPointSet = (label,pointSet) -> (
+    oldPrintingPrecision := printingPrecision;
+    printingPrecision = 20;
+    print(label | " = " | toString apply(pointSet, coordinates));
+    printingPrecision = oldPrintingPrecision;
+    );
+
+testSys2449EquidimensionalComponents = () -> (
+    example := getExampleSystem "Sys2449";
+    R := example#"Ring";
+    I := ideal(example#"Polynomials");
+    d := dim I;
+    topComponents := select(minimalPrimes I, J -> dim J == d);
+
+    assert(numgens R == 11);
+    assert(d == 8);
+    assert(#topComponents == 2);
+    assert(sort apply(topComponents, degree) == {1,3});
+    assert(sum(topComponents / degree) == degree I);
+
+    H := randomRationalHyperplanes(R,d,2449,5);
+    assert(coefficientRing ring H === QQ);
+    assert(numgens H == d);
+    assert(all(H_*, h -> first degree h == 1));
+    assert(dim(I+H) == 0);
+    assert(degree(I+H) == 4);
+
+    print "testing Sys2449 top-dimensional equidimensional part";
+    print("dimension = " | toString d |
+        ", irreducible component degrees = " |
+        toString sort apply(topComponents, degree));
+    print("random rational hyperplanes = " | toString H_*);
+
+    initialPointsByComponent := apply(topComponents, J -> (
+        K := squareComponentIdeal J;
+        slicePoints := solveAndRefineSquareSlice(K,H);
+        assert(#slicePoints == degree J);
+        assert(all(slicePoints, p -> all(J_* | H_*, f ->
+            toyPolynomialResidual(f,p) < 10^(-70))));
+        slicePoints
+        ));
+    initialSlicePoints := flatten initialPointsByComponent;
+    assert(#initialSlicePoints == 4);
+    assert(all(initialSlicePoints, p -> all(I_* | H_*, f ->
+        toyPolynomialResidual(f,p) < 10^(-70))));
+
+    -- NAG's monodromy decomposition needs a complex coefficient ring for
+    -- its temporary slices.  The hyperplanes themselves remain rational,
+    -- and rational witness sets are rebuilt below for reconstruction.
+    complexWitnessSet := complexWitnessSetForDecomposition(
+        I,H,initialSlicePoints);
+    setRandomSeed 3011;
+    numericalComponents := decompose complexWitnessSet;
+    assert(#numericalComponents == 2);
+    assert(sort apply(numericalComponents, degree) == {1,3});
+    print("numerically grouped component degrees = " |
+        toString sort apply(numericalComponents, degree));
+
+    componentResults := apply(#numericalComponents, componentIndex -> (
+        numericalComponent := numericalComponents#componentIndex;
+        componentDegree := degree numericalComponent;
+        matchingComponents := select(topComponents, J ->
+            degree J == componentDegree);
+        assert(#matchingComponents == 1);
+        J := first matchingComponents;
+        K := squareComponentIdeal J;
+        system := polySystem(K_* | H_*);
+        refinedPoints := apply(toList points numericalComponent, p ->
+            refine(system,p,
+                Software => M2engine,
+                Bits => 300,
+                ErrorTolerance => 10^(-70),
+                ResidualTolerance => 10^(-70),
+                Iterations => 60));
+        assert(#refinedPoints == componentDegree);
+        assert(all(refinedPoints, p -> all(I_* | H_*, f ->
+            toyPolynomialResidual(f,p) < 10^(-70))));
+
+        rationalWitnessSet := witnessSet(K,H,refinedPoints);
+        declareIrreducible rationalWitnessSet;
+        print("reconstructing Sys2449 component " |
+            toString(componentIndex+1) | " of degree " |
+            toString componentDegree);
+        result := componentRepresentation(
+            rationalWitnessSet,
+            R,
+            RefineWitnessPoints => false,
+            LinearFormSeed => 29 + componentIndex,
+            PrintResults => true);
+        assert(result#"Reconstructed");
+        assert(result#"Dimension" == d);
+        assert(result#"Degree" == componentDegree);
+
+        rurSolutions := solveRUR result;
+        printNumericalPointSet("numerical slice solutions",refinedPoints);
+        printNumericalPointSet("numerical RUR solutions",rurSolutions);
+        assert(samePointSets(rurSolutions,refinedPoints,10^(-20)));
+        assert(all(rurSolutions, p -> all(I_* | H_*, f ->
+            toyPolynomialResidual(f,p) < 10^(-20))));
+        result
+        ));
+    print "Sys2449 equidimensional-component test completed";
+    new HashTable from {
+        "Example" => example,
+        "Ideal" => I,
+        "Dimension" => d,
+        "Hyperplanes" => H,
+        "NumericalComponents" => numericalComponents,
+        "ComponentResults" => componentResults
+        }
+    );
+
+testExamples = () -> new HashTable from {
+    "ToyExamples" => testToyExamples(),
+    "Sys2449" => testSys2449EquidimensionalComponents()
+    };
 
 end;

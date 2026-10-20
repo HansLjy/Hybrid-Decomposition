@@ -118,40 +118,50 @@ An exact result is refused if no full-degree relation is stable at both LLL
 scales, if the squarefree degree does not equal the number of distinct witness
 points, or if any coordinate relation fails.
 
-## Direct witness-set test and supplied examples
+## Direct witness-set tests and supplied examples
 
-`NodalCubicToy.m2` defines the reducible toy variety consisting of the nodal
-cubic
+`ToyExamples.m2` contains five small ideals over $\mathbb{Q}$. Each entry
+records its ambient variable count $n$, dimension $d$, ideal, exactly $d$
+rational slicing hyperplanes, explicit known solutions, and the resulting
+witness set. The examples cover
+$(n,d)=(2,1),(3,1),(3,2),(4,2)$ and include slices whose solutions involve
+$\sqrt{-2}$ and $\sqrt{3}$. See `ToyExamples.md` for the full
+catalog of equations, slices, and known solutions.
 
-```text
-y^2 = x^2(x+1)
-```
-
-together with the isolated points `(0,2)`, `(1,2)`, and `(2,2)`.  Its rational
-slice `5y-18x+24=0` has the known witness points
-
-```text
-(3,6), (8,24), (24/25,-168/125).
-```
-
-The file constructs the `WitnessSet` directly from these points at 300-bit
-precision.  It also defines the closed-form Chow polynomial
-
-```text
-R(U0,U1,U2) = product_(x,y) (U0-x U1-y U2)
-```
-
-over the three witness points.
-
-The test at the end of `HybridDecomposition.m2` passes this witness set
-straight to `componentRepresentation`; it does not call `regeneration`,
-`decompose`, or `hybridDecomposition`.  Besides checking the fixture, it
-checks that the reconstructed `f` agrees, up to normalization, with the
-specialization `R(T,t_1,t_2)` for the selected separating form.  Run it from
-`src` with
+The test loop at the end of `HybridDecomposition.m2` first checks this fixture
+data algebraically, then passes each witness set to `componentRepresentation`.
+It does not call `regeneration`, `decompose`, or `hybridDecomposition`. Run all
+toy examples from `src` with
 
 ```sh
-M2 -q --stop -e 'load "HybridDecomposition.m2"; testNodalCubicToyWitnessSet();'
+M2 -q --stop -e 'load "HybridDecomposition.m2"; testToyExamples();'
+```
+
+## Equidimensional benchmark test
+
+`testSys2449EquidimensionalComponents()` exercises a larger system from
+`ExampleSystems.m2`. The top-dimensional part of `Sys2449` has dimension
+$d=8$, degree $4$, and exactly two irreducible components, of degrees $1$ and
+$3$. The test generates eight deterministic random hyperplanes over
+$\mathbb{Q}$, verifies that the resulting slice has dimension zero and degree
+$4$, and uses NAG monodromy to group its four points into the two irreducible
+components.
+
+For each group, the test rebuilds a witness set with the rational slice, runs
+`componentRepresentation`, solves the reconstructed $f(T)$, evaluates
+
+$$
+x_i=\frac{h_i(T)}{d_i f_{\mathrm{red}}'(T)},
+$$
+
+and compares the RUR-derived points bijectively with the sliced component at
+tolerance $10^{-20}$. It also substitutes every recovered point into the
+original `Sys2449` equations and all eight hyperplanes.
+
+Run the toy and benchmark suites together with
+
+```sh
+M2 -q --stop -e 'load "HybridDecomposition.m2"; testExamples();'
 ```
 
 `ExampleSystems.m2` remains available separately and contains exact `QQ`
@@ -169,4 +179,4 @@ I = ideal(E#"Polynomials");
 ```
 
 Several of the larger systems have high path counts, so decomposing them can
-take a long time; the direct nodal-cubic test avoids that work.
+take a long time; the direct toy-example loop avoids that work.

@@ -1,0 +1,485 @@
+\documentclass{weeklyprogress}
+
+\title{Progress Report Week 2}
+\author{Jingyi Long}
+
+\begin{document}
+
+\section{Precision Bounds for Reconstructing a Rational Univariate Representation}
+
+We combine the scale-separation argument for integer relations with
+Lemma~\ref{lem:bkm-rur-height}, quoted from
+\cite[Lemma~4.3]{baldi-krick-mourrain}, to obtain a conservative
+relative-precision requirement for RUR reconstruction.
+
+Let $\bm{a}_1,\ldots,\bm{a}_m\in\mathbb{R}^r$ be the vectors used in an
+integer-relation problem, and suppose that only approximations
+$\widetilde{\bm{a}}_1,\ldots,\widetilde{\bm{a}}_m$ are available.  The
+scale-separation result established in the Week 1 report gives the necessary
+condition
+\[
+ \frac{\varepsilon}{M}\ll\frac{1}{N^{m/r}}.
+ \tag{1}
+\]
+Here the parameters have the following meanings:
+\begin{description}[leftmargin=2.5em,labelindent=0em,style=nextline]
+  \item[$m$] the number of vectors $\bm{a}_i$, equivalently the number of
+  entries in the integer coefficient vector;
+  \item[$r$] the number of scalar relations, equivalently the dimension of
+  the residual vector;
+  \item[$N$] an upper bound for the coefficients of the desired relation,
+  so $\lVert\bm{x}\rVert_\infty\leq N$;
+  \item[$M$] a uniform size bound for the exact input vectors, so
+  $\lVert\bm{a}_i\rVert_\infty<M$ for every $i$;
+  \item[$\varepsilon$] a uniform error bound for the numerical inputs, so
+  $\lVert\widetilde{\bm{a}}_i-\bm{a}_i\rVert_\infty\leq\varepsilon$ for
+  every $i$.
+\end{description}
+Thus $\varepsilon/M$ is the relative input error.
+The symbol $\ll$ means that the left-hand side must be smaller than the
+right-hand side by a suitable numerical safety margin.  Condition~(1) is
+necessary only; it does not by itself guarantee that an algorithm can
+distinguish exact relations from near relations.
+
+\subsection{The coefficient bound from Lemma~\ref{lem:bkm-rur-height}}
+
+For an integer polynomial $p=\sum_\alpha p_\alpha\bm{x}^\alpha$, let
+$\mathsf{h}(p)=\max_\alpha\log_2|p_\alpha|$, with zero coefficients omitted.
+Following Baldi, Krick, and Mourrain, write
+$C(n;d)=c\,n\log_2(d(n+1))$ for a suitable positive computable constant $c$.
+
+\begin{lemma}\label{lem:bkm-rur-height}
+Let $J=(h_1,\ldots,h_q,h_{q+1})\subseteq\mathbb{Q}[x_1,\ldots,x_n]$ be a
+zero-dimensional radical ideal defined by polynomials in
+$\mathbb{Z}[x_1,\ldots,x_n]$.  Assume that
+\[
+ \deg(h_j)\leq d\quad(1\leq j\leq q),\qquad
+ e=\max\{d,\deg(h_{q+1})\},\qquad
+ \mathsf{h}(h_j)\leq\tau\quad(1\leq j\leq q+1).
+\]
+Then there exist $w_0,w_1,\ldots,w_n\in\mathbb{Z}[t]$, with
+\[
+ \deg(w_0)=D:=\dim_\mathbb{Q}\mathbb{Q}[\bm{x}]/J,
+ \qquad \deg(w_i)<D\quad(1\leq i\leq n),
+\]
+such that
+\[
+ \begin{aligned}
+ \varphi_J:\mathbb{Q}[\bm{x}]/J&\longrightarrow\mathbb{Q}[t]/(w_0),\\
+ x_i&\longmapsto w_i(w_0')^{-1}
+ \end{aligned}
+\]
+is an isomorphism of algebras.  Moreover,
+\[
+ \mathsf{h}(w_i)\leq C(n;d)d^{n-2}e(d+\tau),
+ \qquad 0\leq i\leq n.
+ \tag{2}
+\]
+\end{lemma}
+
+\subsection{The structured ideal and the required relative precision}
+
+Let $J_0\subseteq\mathbb{Q}[x_1,\ldots,x_n]$ have dimension $s$, and let
+$L_1,\ldots,L_s\in\mathbb{Z}[x_1,\ldots,x_n]$ be hyperplanes.  We consider
+\[
+ J=J_0+(L_1,\ldots,L_s),
+\]
+and assume that $J$ is zero-dimensional and radical.  Suppose that $J_0$
+has integer generators of degree at most $d$ and logarithmic height at most
+$\tau_0$, while $\mathsf{h}(L_k)\leq\tau_1$ for $1\leq k\leq s$.  Thus
+$\tau_0$ and $\tau_1$ measure the arithmetic sizes of the original ideal
+and the slicing hyperplanes, respectively.  Set
+\[
+ \tau:=\max\{\tau_0,\tau_1\}.
+\]
+Assume $d\geq1$.  Every generator of $J_0$ and every $L_k$ then has degree
+at most $d$ and height at most $\tau$.  We may therefore list all these
+generators in Lemma~\ref{lem:bkm-rur-height} and take $e=d$.  The lemma gives
+the weaker but direct bound
+\[
+ \mathsf{h}(w_i)\leq H_J,
+ \qquad
+ H_J:=C(n;d)d^{n-1}
+       \left(d+\max\{\tau_0,\tau_1\}\right).
+ \tag{3}
+\]
+Since the height uses base-$2$ logarithms, we may use
+\[
+ N_J:=2^{H_J}
+ \tag{4}
+\]
+as an upper bound for the absolute values of the integer coefficients to be
+reconstructed.
+
+\begin{center}
+\setlength{\fboxsep}{8pt}%
+\fcolorbox{red!75!black}{red!3}{%
+\begin{minipage}{0.93\linewidth}
+\textcolor{red!80!black}{\textbf{AI-generated remark}}
+
+\smallskip
+\textit{Why a sharper estimate is additive.}
+A sharper estimate requires the iterated arithmetic B\'ezout inequality used
+in \cite[proof of Lemma~4.1]{baldi-krick-mourrain}, rather than only
+Lemma~\ref{lem:bkm-rur-height}.  Let $X_0=V(J_0)$ and
+$X_k=X_{k-1}\cap V(L_k)$.  Under proper intersection, arithmetic B\'ezout
+gives schematically
+\[
+ h_{\mathrm{ar}}(X_k)
+ \leq h_{\mathrm{ar}}(X_{k-1})
+ +\deg(X_{k-1})\bigl(\mathsf{h}(L_k)+C(n)\bigr).
+\]
+Using $\deg(X_{k-1})\leq d^{n-s}$ and
+$h_{\mathrm{ar}}(X_0)\leq
+C(n;d)d^{n-s-1}(d+\tau_0)$, iteration over the $s$ hyperplanes yields
+\[
+ h_{\mathrm{ar}}(X_s)
+ \leq C(n;d)d^{n-s-1}(d+\tau_0)
+ +s d^{n-s}\bigl(\tau_1+C(n)\bigr).
+\]
+Thus the two contributions are added because each hyperplane increases the
+height obtained at the preceding step.  After absorbing dimensional
+constants, this leads to the sharper candidate
+\[
+ C(n;d)\left[d^{n-s-1}(d+\tau_0)
+ +s d^{n-s}(1+\tau_1)\right].
+\]
+This refinement is not used in the bounds below.
+\end{minipage}%
+}
+\end{center}
+
+For a coefficient vector with $m$ entries and $r$ scalar relations,
+substitution of $N=N_J$ into~(1) yields
+\[
+ \boxed{
+ \frac{\varepsilon}{M}
+ \ll 2^{-\frac{m}{r}H_J}
+ =2^{-\frac{m}{r}C(n;d)d^{n-1}
+ \left(d+\max\{\tau_0,\tau_1\}\right)}.}
+ \tag{5}
+\]
+If $p_{\mathrm{rel}}=-\log_2(\varepsilon/M)$ is the relative working
+precision and $\sigma>0$ safety bits are desired, the corresponding
+requirement is
+\[
+ \boxed{p_{\mathrm{rel}}\geq\frac{m}{r}H_J+\sigma.}
+ \tag{6}
+\]
+
+Now specialize to reconstructing
+$f(T)=c_0+c_1T+\cdots+c_DT^D$ from its $D$ known roots.  The coefficient
+vector has $m=D+1$ entries, and
+the conditions $f(\alpha_j)=0$, $1\leq j\leq D$, give $r=D$ scalar
+relations.  Here $D$ is both the number of roots and
+$\dim_\mathbb{Q}\mathbb{Q}[\bm{x}]/J$.  Consequently,
+\[
+ \boxed{
+ \frac{\varepsilon}{M}
+ \ll 2^{-\frac{D+1}{D}H_J}
+ =2^{-\frac{D+1}{D}C(n;d)d^{n-1}
+ \left(d+\max\{\tau_0,\tau_1\}\right)}.}
+ \tag{7}
+\]
+Equivalently, it is enough to take
+\[
+ p_{\mathrm{rel}}\geq\frac{D+1}{D}H_J+\sigma.
+ \tag{8}
+\]
+These are worst-case scale-separation bounds and should be followed by an
+a posteriori verification of the reconstructed polynomial.
+
+\subsection{A lower bound from the complete set of exact roots}
+
+The preceding pigeonhole argument applies to an arbitrary real matrix and
+does not distinguish a small nonzero residual from an exact relation.  The
+matrix arising from evaluation at the complete root set of an integer
+polynomial has additional arithmetic structure.  This structure gives a
+positive lower bound for the residual of every false candidate.
+
+\begin{proposition}\label{prop:all-roots-gap}
+Let $f\in\mathbb{Z}[T]$ be a squarefree polynomial of degree $D$, let
+$\alpha_1,\ldots,\alpha_D$ be all of its complex roots, and put
+\[
+ a=|\operatorname{lc}(f)|.
+\]
+If $g\in\mathbb{Z}[T]$ has degree at most $D$, then either $g$ is a scalar
+multiple of $f$ in $\mathbb{Q}[T]$, or
+\[
+ \max_{1\leq i\leq D}|g(\alpha_i)|\geq a^{-D}.
+ \tag{9}
+\]
+In particular, if $f$ is monic, then either $g$ is an integer multiple of
+$f$, or
+\[
+ \max_{1\leq i\leq D}|g(\alpha_i)|\geq1.
+ \tag{10}
+\]
+\end{proposition}
+
+\begin{proof}
+Replacing $f$ by its primitive part does not change its roots or the meaning
+of being a scalar multiple in $\mathbb{Q}[T]$.  Factor this primitive part
+over $\mathbb{Z}[T]$ as a product of distinct primitive irreducible
+polynomials.  If $g$ is not a scalar multiple of $f$, then, since
+$\deg(g)\leq\deg(f)$, some irreducible factor $h$ of $f$ does not divide
+$g$.  Irreducibility implies $\gcd(h,g)=1$: in particular, although $g$ may
+vanish at roots belonging to other factors of $f$, it shares no root with
+this particular factor $h$.
+
+Write $d_h=\deg(h)$, $a_h=|\operatorname{lc}(h)|$, and $e=\deg(g)$.  The
+resultant is a nonzero integer and satisfies
+\[
+ 1\leq |\operatorname{Res}(h,g)|
+ =a_h^e\prod_{h(\alpha)=0}|g(\alpha)|.
+\]
+Consequently,
+\[
+ \max_{h(\alpha)=0}|g(\alpha)|
+ \geq a_h^{-e/d_h}.
+ \tag{11}
+\]
+The leading coefficients of the primitive irreducible factors multiply to
+the leading coefficient of the primitive part of $f$.  Hence
+$1\leq a_h\leq a$.  Since $e\leq D$ and $d_h\geq1$, (11) gives
+\[
+ a_h^{-e/d_h}\geq a^{-D},
+\]
+which proves (9).  If $f$ is monic, every $a_h=1$, so (11) gives (10).
+Finally, in the monic case, divisibility $f\mid g$ together with
+$\deg(g)\leq D$ forces $g$ to be an integer multiple of $f$.
+\end{proof}
+
+This does not contradict the Week~1 pigeonhole bound.  The vector produced
+there is only required to be nonzero; it may be the coefficient vector of
+$f$, or an integer multiple of it, and hence may have residual exactly zero.
+Proposition~\ref{prop:all-roots-gap} instead concerns candidates whose
+residual is genuinely nonzero.
+
+To see the numerical consequence, let $V$ be the $D\times(D+1)$ evaluation
+matrix whose $i$th row is
+\[
+ (1,\alpha_i,\ldots,\alpha_i^D),
+\]
+and suppose that every entry of an approximation $\widetilde V$ differs from
+the corresponding entry of $V$ by at most $\varepsilon$.  For a coefficient
+vector $\bm{x}\in\mathbb{Z}^{D+1}$ with
+$\lVert\bm{x}\rVert_\infty\leq N$,
+\[
+ \lVert(\widetilde V-V)\bm{x}\rVert_\infty
+ \leq(D+1)N\varepsilon.
+\]
+An exact relation therefore has numerical residual at most
+$(D+1)N\varepsilon$, whereas Proposition~\ref{prop:all-roots-gap} gives a
+false candidate the lower bound
+\[
+ \lVert\widetilde V\bm{x}\rVert_\infty
+ \geq a^{-D}-(D+1)N\varepsilon.
+\]
+Thus the two cases are separated by the threshold $(D+1)N\varepsilon$ when
+\[
+ 2(D+1)N\varepsilon<a^{-D}.
+ \tag{12}
+\]
+For a monic polynomial, the right-hand side of (12) is $1$.
+
+\section{Implementation Tests for RUR Reconstruction}
+
+Each toy system consists of an ideal
+$I\subseteq\mathbb{Q}[x_1,\ldots,x_n]$ of dimension $\delta$, together with
+exactly $\delta$ rational affine hyperplanes generating an ideal $H$.  The
+slice $I+H$ is zero-dimensional and its solutions are known explicitly.
+
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+Example & $n$ & $\delta$ & $\deg(I)$ & Coordinates in the slice \\
+\hline
+Nodal cubic & $2$ & $1$ & $3$ & rational \\
+Parabola & $2$ & $1$ & $2$ & $\sqrt{-2}$ \\
+Two affine lines & $3$ & $1$ & $2$ & $\sqrt{-2}$ \\
+Quadratic surface & $3$ & $2$ & $2$ & $\sqrt{-2}$ \\
+Product of parabolas & $4$ & $2$ & $4$ & $\sqrt{-2},\sqrt{3}$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Polynomial systems}
+
+\paragraph{Nodal cubic: \texttt{nodal-cubic-rational-slice}.}
+Here $(n,\delta)=(2,1)$ and
+\[
+ R=\mathbb{Q}[x,y],\qquad
+ I=\langle y^2-x^2(x+1)\rangle,\qquad
+ H=\langle 5y-18x+24\rangle.
+\]
+\[
+ V(I+H)=
+ \left\{(3,6),(8,24),
+ \left(\frac{24}{25},-\frac{168}{125}\right)\right\}.
+\]
+
+\paragraph{Parabola: \texttt{parabola-x2-plus-2}.}
+Here $(n,\delta)=(2,1)$ and
+\[
+ R=\mathbb{Q}[x,y],\qquad
+ I=\langle y-x^2\rangle,\qquad
+ H=\langle y+2\rangle.
+\]
+\[
+ V(I+H)=\{(\sqrt{-2},-2),(-\sqrt{-2},-2)\}.
+\]
+
+\paragraph{Two affine lines: \texttt{two-irrational-lines}.}
+Here $(n,\delta)=(3,1)$ and
+\[
+ R=\mathbb{Q}[x,y,z],\qquad
+ I=\langle x^2+2,y-3\rangle,\qquad
+ H=\langle z-5\rangle.
+\]
+\[
+ V(I+H)=\{(\sqrt{-2},3,5),(-\sqrt{-2},3,5)\}.
+\]
+
+\paragraph{Quadratic surface: \texttt{quadratic-surface}.}
+Here $(n,\delta)=(3,2)$ and
+\[
+ R=\mathbb{Q}[x,y,z],\qquad
+ I=\langle z^2+x+2\rangle,\qquad
+ H=\langle x,y\rangle.
+\]
+\[
+ V(I+H)=\{(0,0,\sqrt{-2}),(0,0,-\sqrt{-2})\}.
+\]
+
+\paragraph{Product of parabolas: \texttt{product-of-parabolas}.}
+Here $(n,\delta)=(4,2)$ and
+\[
+ R=\mathbb{Q}[a,b,c,d],\qquad
+ I=\langle c-a^2,d-b^2\rangle,\qquad
+ H=\langle c+2,d-3\rangle.
+\]
+\[
+ \begin{aligned}
+ V(I+H)=\{&
+ (\sqrt{-2},\sqrt{3},-2,3),
+ &&(\sqrt{-2},-\sqrt{3},-2,3),\\
+ &(-\sqrt{-2},\sqrt{3},-2,3),
+ &&(-\sqrt{-2},-\sqrt{3},-2,3)\}.
+ \end{aligned}
+\]
+
+\subsection{Toy-system test procedure}
+
+For each of the five systems, the test performs the following checks.
+
+\begin{enumerate}
+  \item It checks that the coefficient ring is $\mathbb{Q}$, that the ambient
+  ring has $n$ variables, that $\dim(I)=\delta$, and that $H$ has exactly
+  $\delta$ linear generators.
+  \item It verifies that $I+H$ is zero-dimensional, that its degree equals the
+  number of recorded solutions, and that each known point satisfies all
+  generators of $I+H$ with residual less than $10^{-70}$.
+  \item It runs \verb|componentRepresentation| on the directly constructed
+  witness set.  The routine prints the separating linear form $t$, the
+  reconstructed polynomial $f$, and the coordinate numerators and
+  denominators.  With the deterministic test seed, the selected forms were
+  \[
+  \begin{array}{c|c}
+  \text{example} & t \\
+  \hline
+  \text{nodal cubic} & -12x+y \\
+  \text{parabola} & -12x+y \\
+  \text{two affine lines} & -12x+y+z \\
+  \text{quadratic surface} & -12x+y+z \\
+  \text{product of parabolas} & -12a+b+c-12d
+  \end{array}
+  \]
+  \item It independently solves $f(T)=0$ at $300$-bit precision.  For every
+  projected root $\beta$, it reconstructs a point using
+  \[
+  x_i=\frac{h_i(\beta)}{d_i f_{\mathrm{red}}'(\beta)},
+  \]
+  where $h_i/d_i$ is the reconstructed coordinate polynomial and
+  $f_{\mathrm{red}}$ is the squarefree part of $f$.
+  \item It compares the resulting numerical point set bijectively with the
+  exact known solution set.  Point ordering is ignored, and the comparison
+  tolerance is $10^{-20}$.  Both sets are printed, with the numerical set
+  displayed to $20$ digits.
+\end{enumerate}
+
+All five systems passed the structural checks, exact reconstruction checks,
+and the final comparison of the RUR-derived solutions with the known
+solutions.
+
+\clearpage
+
+\subsection{The \texttt{Sys2449} equidimensional-component test}
+
+The system \texttt{Sys2449} is stored in
+$R=\mathbb{Q}[c_1,\ldots,c_6,x_1,\ldots,x_5]$ with $21$ generators.  Its
+top-dimensional equidimensional part has dimension $\delta=8$, degree $4$,
+and two irreducible components:
+\[
+ P_1=\langle c_5,c_2,c_1\rangle,
+\]
+\[
+ P_2=\langle c_5,c_4c_6-c_2,c_3c_6-c_1,
+ c_2c_3-c_1c_4\rangle,
+\]
+with $\deg(P_1)=1$ and $\deg(P_2)=3$.
+
+Using random seed $2449$ and coefficients in $[-5,5]$, the test generates
+$H=\langle L_1,\ldots,L_8\rangle$, where
+{\small
+\begin{align*}
+ L_1={}&4c_1-4c_2+2c_3-5c_5-4c_6
+       +3x_1-3x_2+3x_3+x_4-2x_5+3,\\
+ L_2={}&-c_2-5c_5+3c_6-3x_1+2x_2+4x_3-x_4+x_5+3,\\
+ L_3={}&3c_1-c_2+4c_3+4c_4-3c_5-4c_6
+       +2x_1+4x_2-5x_3-5x_4+3x_5,\\
+ L_4={}&-4c_1-2c_2+c_3-5c_4-4c_5
+       +3x_1+5x_2-x_3-x_4-2x_5,\\
+ L_5={}&3c_1+3c_2-3c_4-4c_5+5c_6
+       -3x_1+5x_2+3x_3+5x_4+4x_5-1,\\
+ L_6={}&-c_2-2c_3-2c_4-3c_5+4c_6
+       +2x_1+x_3-3x_4-4x_5-5,\\
+ L_7={}&2c_1+c_2-2c_3-c_4+c_5+4c_6
+       +3x_1-x_2+5x_3-4x_4-x_5+1,\\
+ L_8={}&-3c_1-5c_2-2c_3-5c_4-c_5-c_6
+       -2x_1-2x_2-2x_3+x_4+x_5.
+\end{align*}
+}
+The sliced ideal is zero-dimensional of degree $4$.
+
+The four slice points are placed in one witness set and passed to NAG's
+built-in \verb|decompose| routine.  Thus the monodromy grouping is supplied
+by NAG rather than implemented separately in this project.  Because NAG's
+temporary monodromy slices have complex coefficients, the grouping step uses
+a complex copy of the polynomial system.  It returns two groups of degrees
+$1$ and $3$.  Each group is then refined against its component equations and
+the original rational hyperplanes, and a rational witness set is rebuilt.
+
+The reconstruction algorithm is run independently on these two rational
+witness sets.  For each reconstructed RUR, the test solves $f(T)=0$ at
+$300$-bit precision and evaluates
+\[
+ x_i=\frac{h_i(T)}{d_i f_{\mathrm{red}}'(T)}.
+\]
+The RUR-derived solutions are matched bijectively with the refined slice
+points at tolerance $10^{-20}$ and are substituted into all $21$ original
+equations and all eight hyperplanes.  Both components passed every check.
+
+The complete test suite is run from the \verb|src| directory using
+\begin{verbatim}
+M2 -q --stop -e 'load "HybridDecomposition.m2"; testExamples();'
+\end{verbatim}
+
+\begin{thebibliography}{1}
+  \bibitem{baldi-krick-mourrain}
+  Lorenzo Baldi, T\'er\`esa Krick, and Bernard Mourrain,
+  \emph{An Effective Positivstellensatz over the Rational Numbers for
+  Finite Semialgebraic Sets}, 2024, Lemma~4.3.
+\end{thebibliography}
+
+\end{document}
